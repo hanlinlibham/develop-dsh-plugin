@@ -7,6 +7,8 @@ description: Research, design, implement, review, debug, or rewrite productized 
 
 Build the smallest source package that owns one current capability, mounts through a documented DSH seam, survives replay when model-visible, and disappears cleanly on unload.
 
+The bundled starter was checked against **DSH 0.2.2-rc.1 / Cordis 4.1.0 / Node.js >=24.9.0** on 2026-11-07. Read [the version and migration notes](references/runtime-0.2.2.md) when targeting this release or reviewing older code. Resolve the actual release tag and npm version; development-branch code and individual packages' `latest` tags may describe different contracts.
+
 ## Start from the target repository
 
 1. Read the nearest `AGENTS.md`, `CLAUDE.md`, contribution rules, package standards, and deployment notes before changing files.
@@ -110,12 +112,14 @@ Inspect the dry run, then repeat without `--dry-run`. Resolve `<skill-dir>` to t
 Follow these invariants:
 
 - Use named `name`, `inject`, `Config`, and `apply` exports for function plugins. Do not default-export `apply`.
-- Put service keys in plugin `inject`; put package-name edges only where the Client manifest expects package names.
+- Put service keys in plugin `inject`. Client manifest `inject` entries are informational package-name edges; they do not order activation. Register into another package's slot through `ctx.slots.inject(slotName, callback)` so contributions follow the slot declaration's lifetime.
 - Access an optional service with `ctx.get(name)` or a nested `ctx.inject`; never probe `ctx.foo` before declaring it.
 - Keep cross-plugin runtime dependencies behind services, events, slots, or another published contract. Allow `import type` only when it does not create a runtime edge.
-- Treat `ctx.on`, registry `register`, and other Cordis contributions as fiber-owned reversible effects. Wrap external DOM nodes, subscriptions, timers, sockets, workers, and child processes in `ctx.effect()` with a disposer.
+- Confirm ownership for each registration API. `ctx.on`, tool registrations and slot registrations are fiber-owned; an API returning an unowned disposer must be adopted through `ctx.effect()`. Wrap external DOM nodes, subscriptions, timers, sockets, workers, and child processes in a disposing effect as well.
 - Let required misconfiguration fail loudly. Do not turn a missing required service, wrong path, duplicate key, or invalid config into a plausible partial success.
 - Keep tool arguments read-only, honor `AbortSignal`, return canonical JSON, and separate model rendering from UI presentation.
+- For conditional tools, use `register(definition, { when })` and the step's resolved tool set. Do not add or remove callable tools through `system-prompt/assemble`. Custom compositions must mount an executor; `tools.mode` and `DSH_TOOLS_MODE` are removed in the checked release.
+- Select the next step's model through `agent.model.select(...)`; do not add `agent/request` routing listeners. Await projection registration before exposing synchronous readers; async plugin setup returns `void`, not the projection handle.
 - Call `next()` in a waterfall listener unless intentionally and contractually stopping the chain.
 - Persist model-visible context through session events or supported injection APIs so replay, fork, and resume reconstruct the same request.
 - Keep conversation node identity stable from running to settled state.
@@ -131,7 +135,7 @@ Discover the target repository's gates; do not assume command names. Run evidenc
 2. Run inject/export, dependency, manifest, lint, and package-shape checks that cover the changed package.
 3. Test each model-visible behavior and every important error, cancellation, and disposal path.
 4. Build Host and Client artifacts and inspect the exported files.
-5. Boot a real Loader composition and inspect the resolved tree and config.
+5. Inspect the expanded config, then boot a real Loader composition and verify activation. `--dump-config` alone is boot-free and does not prove service readiness.
 6. Exercise the model-facing path in a real session.
 7. For UI, click through desktop and narrow layouts, including running, settled, error, empty, close, and reopen states.
 8. Unload or disable the plugin and verify that its registrations and external resources disappear while the host and unrelated plugins continue working.

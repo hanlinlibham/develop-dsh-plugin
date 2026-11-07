@@ -5,7 +5,7 @@ export default defineConfig({
   outDir: 'lib',
   format: 'esm',
   platform: 'node',
-  target: 'node22',
+  target: 'node24',
   dts: false,
   sourcemap: true,
   clean: true,

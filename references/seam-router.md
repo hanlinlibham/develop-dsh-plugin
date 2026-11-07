@@ -16,6 +16,9 @@ Host and Client have different Contexts and service graphs. A Client service doe
 | Requirement | Preferred seam | Avoid |
 |---|---|---|
 | Add a model-callable capability | `ctx.tools.register` | patching agent loop |
+| Enable a tool conditionally per step | registration `{ when }` plus the resolved tool set | editing tools in `system-prompt/assemble` |
+| Choose the model for the next prepared step | `agent.model.select(...)` | changing the route in `agent/request` |
+| Maintain log-derived Session state | awaited `sessionProjections.register` handle | returning a handle as an async Cordis effect |
 | Add bounded context before a model step | `agent/pre-step` plus supported durable injection | privately concatenating a prompt |
 | Transform or reject a request | typed waterfall event | emit listener or UI interception |
 | Enforce a final monotonic denial | supported guard | hidden denial inside business execution |
@@ -23,6 +26,8 @@ Host and Client have different Contexts and service graphs. A Client service doe
 | Check a turn before settlement | `agent/turn-stopping` | unbounded steering loops |
 | Add a replaceable backend | Service Definition + Provider + Consumer | consumer importing provider implementation |
 | Add an independent UI contribution | the narrowest additive slot or public UI service | querying product DOM |
+| Contribute to another package's slot | `ctx.slots.inject` around registration | treating service activation as slot readiness |
+| Add resource context-menu actions | `contextMenus` public registry | replacing the owner view or implementing a second menu system |
 | Replace a keyed UI occupant | exact slot contract plus explicit replacement authority | guessing key or priority |
 | Change global appearance | official theme tokens | a second theme system |
 | Style one component | package-local styles using theme variables | mutating `document.body` or unrelated selectors |

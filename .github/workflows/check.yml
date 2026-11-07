@@ -20,6 +20,21 @@ jobs:
           python-version: '3.10'
       - name: Test scaffold and audit helpers
         run: python3 -B scripts/test_scripts.py
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '24.9.0'
+      - name: Build and exercise the checked Host starter
+        env:
+          DSH_SMOKE_DIR: ${{ runner.temp }}/dsh-plugin-check
+        run: |
+          set -euo pipefail
+          python3 scripts/scaffold_plugin.py "$DSH_SMOKE_DIR" \
+            --package-name dsh-plugin-ci-check \
+            --dsh-version 0.2.2-rc.1 --cordis-version 4.1.0
+          npm install --prefix "$DSH_SMOKE_DIR" --ignore-scripts --no-audit --no-fund
+          npm run check --prefix "$DSH_SMOKE_DIR"
+          python3 scripts/audit_plugin.py "$DSH_SMOKE_DIR" --dsh-version 0.2.2-rc.1 --require-built
+          npm pack --prefix "$DSH_SMOKE_DIR" --dry-run "$DSH_SMOKE_DIR"
       - name: Scan public files and Git history
         env:
           GH_TOKEN: ${{ github.token }}

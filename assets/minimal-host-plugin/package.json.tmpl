@@ -3,6 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "engines": {
+    "node": ">=24.9.0",
+    "dsh": "__DSH_VERSION__"
+  },
   "files": [
     "lib/*.js",
     "lib/*.js.map",
@@ -25,14 +29,17 @@
     "check": "tsc --noEmit -p tsconfig.json && tsdown && node --test tests/*.spec.mjs"
   },
   "peerDependencies": {
-    "@deepseek-ai/cordis": "*"
-  },
-  "dependencies": {
+    "@deepseek-ai/cordis": "__CORDIS_VERSION__",
     "@deepseek-ai/dsh-tools": "__DSH_VERSION__"
   },
   "devDependencies": {
     "@deepseek-ai/cordis": "__CORDIS_VERSION__",
-    "@types/node": "^22.20.1",
+    "@deepseek-ai/dsh-tools": "__DSH_VERSION__",
+    "@deepseek-ai/dsh-system-prompt": "__DSH_VERSION__",
+    "@deepseek-ai/dsh-tool-executor-native": "__DSH_VERSION__",
+    "@deepseek-ai/dsh-attachment": "__DSH_VERSION__",
+    "@deepseek-ai/dsh-package-manifest": "__DSH_VERSION__",
+    "@types/node": "^24",
     "tsdown": "^0.15.6",
     "typescript": "^5.9.2"
   }

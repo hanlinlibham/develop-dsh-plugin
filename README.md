@@ -32,13 +32,14 @@ git clone https://github.com/hanlinlibham/develop-dsh-plugin.git \
 | [扩展点选择](references/seam-router.md) | 服务、事件、工具、slot 与主题的职责边界 |
 | [包合同](references/package-contract.md) | exports、依赖、工具、Client 与安装合同 |
 | [验收与案例](references/validation-and-casebook.md) | 验证矩阵和真实开发中的失败模式 |
+| [0.2.2 开发迁移说明](references/runtime-0.2.2.md) | 已核对的版本、接口变化、官方来源和验证边界 |
 | [Host 模板](assets/minimal-host-plugin/) | 一个最小模型工具插件的源码模板 |
 | [脚手架](scripts/scaffold_plugin.py) | 使用显式版本生成插件；拒绝覆盖已有内容 |
 | [静态审计](scripts/audit_plugin.py) | 检查包结构、导出、依赖和构建文件 |
 
 ## 辅助脚本
 
-辅助脚本只依赖 Python 3.10+ 标准库。生成的插件另需 Node.js、包管理器和对应 DSH / Cordis 依赖。
+辅助脚本只依赖 Python 3.10+ 标准库。当前 Host 模板已针对 **DSH 0.2.2-rc.1 / Cordis 4.1.0 / Node.js >=24.9.0** 验证（2026-11-07）；其他版本须先核对模板 API 与依赖。
 
 从**实际目标运行时**取得精确版本后：
 
@@ -65,9 +66,9 @@ python3 -B scripts/test_scripts.py
 
 ## 版本与验证边界
 
-这里的经验与示例来自特定版本的实践，未承诺兼容所有 DSH 版本。测试中的历史版本号只用于验证脚本行为。开发时应重新核对目标运行时的服务、事件和 slot 合同。
+这里的经验与示例来自特定版本的实践，未承诺兼容所有 DSH 版本。当前版本仍是 RC。开发时应重新核对目标运行时的服务、事件和 slot 合同，并区分发布 tag 与 `master` 上尚未发布的变化。
 
-静态审计和本仓 CI 验证辅助脚本及公开文件，不能证明生成的插件已通过真实 Loader、模型会话、回放、浏览器交互或卸载验收；这些仍按 Skill 的验证矩阵完成。
+CI 会在干净环境生成插件并安装依赖，执行类型检查、构建、真实工具注册与执行、取消及卸载测试。静态审计支持多 patch bundle 和 peer/dev 依赖检查，但不求解 SemVer 范围。上述检查仍不等于完整 Loader、模型会话、回放或浏览器验收；这些按 Skill 的验证矩阵完成。
 
 临时使用 `cordis_inspect_*` / `cordis_define` / `cordis_run` 定义运行时插件时，应使用目标 DSH 提供的动态插件工作流。
 

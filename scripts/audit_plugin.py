@@ -104,17 +104,24 @@ def audit(plugin_dir: Path, require_built: bool, dsh_version: str | None) -> lis
         dsh = {}
     bundle = dsh.get("bundle")
     patch = bundle.get("patch") if isinstance(bundle, dict) else None
-    if not isinstance(patch, str) or not patch:
-        add("error", "bundle.patch", "missing dsh.bundle.patch")
-    else:
-        patch_path = plugin_dir / patch
+    patches = [patch] if isinstance(patch, str) and patch else patch
+    if not isinstance(patches, list) or not patches or not all(isinstance(item, str) and item for item in patches):
+        add("error", "bundle.patch", "dsh.bundle.patch must be a path or a non-empty ordered list of paths")
+        patches = []
+    named_package = False
+    for patch_name in patches:
+        patch_path = (plugin_dir / patch_name).resolve()
+        if Path(patch_name).is_absolute() or not patch_path.is_relative_to(plugin_dir.resolve()):
+            add("error", "bundle.path", f"bundle patch must stay inside the package: {patch_name}")
+            continue
         if not patch_path.is_file():
-            add("error", "bundle.file", f"bundle patch does not exist: {patch}")
+            add("error", "bundle.file", f"bundle patch does not exist: {patch_name}")
         else:
             patch_text = patch_path.read_text(encoding="utf-8")
             name_pattern = re.compile(rf"^\s*name:\s*['\"]?{re.escape(package_name)}['\"]?\s*$", re.M)
-            if package_name != "<unknown>" and not name_pattern.search(patch_text):
-                add("warning", "bundle.name", f"bundle patch does not name {package_name}")
+            named_package = named_package or bool(name_pattern.search(patch_text))
+    if patches and package_name != "<unknown>" and not named_package:
+        add("warning", "bundle.name", f"bundle patches do not name {package_name}; confirm composition intent")
 
     client = dsh.get("client")
     if client is not None:
@@ -129,17 +136,37 @@ def audit(plugin_dir: Path, require_built: bool, dsh_version: str | None) -> lis
     dependencies = dependencies if isinstance(dependencies, dict) else {}
     peer_dependencies = package.get("peerDependencies")
     peer_dependencies = peer_dependencies if isinstance(peer_dependencies, dict) else {}
+    dev_dependencies = package.get("devDependencies")
+    dev_dependencies = dev_dependencies if isinstance(dev_dependencies, dict) else {}
     if "@deepseek-ai/cordis" in dependencies:
         add("error", "dependency.cordis", "Cordis belongs in peerDependencies, not dependencies")
     if "@deepseek-ai/cordis" not in peer_dependencies:
         add("error", "peer.cordis", "missing @deepseek-ai/cordis peerDependency")
-    for dependency, version in dependencies.items():
-        if not dependency.startswith("@deepseek-ai/dsh-") or not isinstance(version, str):
-            continue
-        if not exact_version(version):
-            add("error", "dependency.floating", f"{dependency} must use an exact version, got {version}")
-        if dsh_version is not None and version != dsh_version:
-            add("error", "dependency.runtime", f"{dependency} is {version}, target runtime is {dsh_version}")
+    for section, entries in (("dependencies", dependencies), ("devDependencies", dev_dependencies)):
+        for dependency, version in entries.items():
+            if not (dependency == "@deepseek-ai/dsh" or dependency.startswith("@deepseek-ai/dsh-")):
+                continue
+            if not isinstance(version, str) or not exact_version(version):
+                add("error", "dependency.floating", f"{section}: {dependency} needs an exact test/build version, got {version}")
+            elif dsh_version is not None and version != dsh_version:
+                add("error", "dependency.runtime", f"{section}: {dependency} is {version}, target runtime is {dsh_version}")
+    for dependency in peer_dependencies:
+        if dependency.startswith("@deepseek-ai/dsh-") and dependency not in dev_dependencies:
+            add("warning", "peer.development", f"{dependency} has no pinned devDependency for standalone checks")
+
+    engines = package.get("engines", {})
+    if not isinstance(engines, dict):
+        add("error", "engines.invalid", "engines must be an object")
+    else:
+        requirement = engines.get("dsh")
+        if requirement is None:
+            add("warning", "engines.dsh", "declare engines.dsh; otherwise the launcher uses DSH peer requirements")
+        elif not isinstance(requirement, str) or not requirement.strip() or requirement.startswith("workspace:"):
+            add("error", "engines.dsh", "engines.dsh must be a non-empty SemVer requirement, not workspace:")
+        elif exact_version(requirement) and dsh_version is not None and requirement != dsh_version:
+            add("error", "engines.runtime", f"engines.dsh is {requirement}, target runtime is {dsh_version}")
+        if not engines.get("node"):
+            add("warning", "engines.node", "declare the target runtime's Node.js floor")
 
     scripts = package.get("scripts")
     scripts = scripts if isinstance(scripts, dict) else {}
@@ -152,7 +179,7 @@ def audit(plugin_dir: Path, require_built: bool, dsh_version: str | None) -> lis
     if not patterns:
         add("warning", "package.files", "package.json has no files allowlist")
     else:
-        for target in [*export_paths, patch] if isinstance(patch, str) else export_paths:
+        for target in [*export_paths, *patches]:
             if not file_is_packed(target, patterns):
                 add("error", "package.unpacked", f"package files do not include {target}")
 
@@ -172,7 +199,7 @@ def audit(plugin_dir: Path, require_built: bool, dsh_version: str | None) -> lis
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        description="Audit local package-shape rules; this does not replace Loader or unload tests."
+        description="Audit Host package shape; does not evaluate SemVer ranges or replace install, Loader or unload tests."
     )
     parser.add_argument("plugin_dir", type=Path)
     parser.add_argument("--require-built", action="store_true", help="require exported JS files")

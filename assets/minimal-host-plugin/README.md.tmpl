@@ -13,6 +13,7 @@ Replace the status behavior with one current capability after completing the res
 - Durable source: normal session tool call and result events
 - Cleanup: `ctx.tools.register()` is owned by the plugin fiber
 - Compatible DSH version: `__DSH_VERSION__`
+- Node.js: 24.9 or newer; the bundled starter is verified against DSH 0.2.2-rc.1 / Cordis 4.1.0. Adapt its APIs and dependency list before targeting another release.
 
 ## Development
 
@@ -24,6 +25,8 @@ __PM_PACK__
 
 Run the target repository's inject, dependency, lint, and aggregate test gates as well.
 
+Tests mount the actual tool registry and native executor, call the generated tool, check cancellation, and unload it. They do not make an LLM request or test Session replay. The `dsh-attachment` and `dsh-package-manifest` dev dependencies satisfy type imports in the 0.2.2-rc.1 published declarations; keep strict type checking enabled.
+
 ## Isolated installation
 
 ```bash
@@ -31,7 +34,9 @@ dsh plugin --profile demo add .
 dsh --profile demo --dump-config
 ```
 
-Start a real session in that profile and confirm the model can see and call `__TOOL_NAME__`.
+`--dump-config` expands configuration without booting the Loader. Start a real session in that profile and confirm the model can see and call `__TOOL_NAME__`. A custom composition also needs a tool executor; shipped base profiles already include one.
+
+For npm or tarball distribution, build before packing. Git-source installs need a self-contained `prepare` build and the installer's explicit build-script allowance. Keep `private: true` until publication is intended; public plugin indexes omit private packages.
 
 ## Removal
 

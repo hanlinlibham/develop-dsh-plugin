@@ -17,6 +17,8 @@ Read this file before declaring a plugin complete, reviewing a rewrite, or decid
 
 Inspect the scope of every verifier before accepting its result.
 
+`--dump-config` is a boot-free expansion. It proves configuration shape, not plugin activation. The bundled Python tests do not compile TypeScript; run the generated package's check in a clean install too. See [the checked runtime notes](runtime-0.2.2.md) for the current baseline and actual validation scope.
+
 ## Minimum test surface
 
 Test at least:

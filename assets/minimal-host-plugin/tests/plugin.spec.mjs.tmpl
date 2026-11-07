@@ -1,11 +1,48 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { pluginStatus } from '../lib/index.js'
+import { Context } from '@deepseek-ai/cordis'
+import SystemPrompt from '@deepseek-ai/dsh-system-prompt'
+import Tools from '@deepseek-ai/dsh-tools'
+import * as NativeExecutor from '@deepseek-ai/dsh-tool-executor-native'
+import * as plugin from '../lib/index.js'
 
 test('plugin status identifies the generated package', () => {
-  assert.deepEqual(pluginStatus(), {
+  assert.deepEqual(plugin.pluginStatus(), {
     packageName: '__PACKAGE_NAME__',
     pluginId: '__PLUGIN_ID__',
     active: true,
   })
+})
+
+test('tool executes through the native pipeline and disappears on unload', async () => {
+  const ctx = new Context()
+  try {
+    await ctx.plugin(SystemPrompt)
+    await ctx.plugin(Tools)
+    await ctx.plugin(NativeExecutor)
+    const mounted = ctx.plugin(plugin)
+    await mounted
+    assert.ok(ctx.tools.schemas().some(tool => tool.name === '__TOOL_NAME__'))
+
+    const call = signal => ctx.tools.execute({
+      calls: [{ type: 'tool-call', id: 'example-call', name: '__TOOL_NAME__', arguments: '{}' }],
+      signal,
+    })
+    const { results } = await call(new AbortController().signal)
+    assert.equal(results[0].result.isError, false)
+    assert.deepEqual(results[0].result.value, {
+      packageName: '__PACKAGE_NAME__', pluginId: '__PLUGIN_ID__', active: true,
+    })
+    assert.deepEqual(results[0].result.content, [{ type: 'text', text: '__PLUGIN_ID__ is active.' }])
+
+    const cancelled = new AbortController()
+    cancelled.abort()
+    assert.equal((await call(cancelled.signal)).results[0].result.isError, true)
+
+    await mounted.dispose()
+    assert.equal(ctx.tools.get('__TOOL_NAME__'), undefined)
+    assert.equal((await call(new AbortController().signal)).results[0].result.isError, true)
+  } finally {
+    await ctx.fiber.dispose()
+  }
 })

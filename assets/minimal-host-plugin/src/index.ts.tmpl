@@ -42,11 +42,5 @@ export function apply(ctx: Context): void {
       exec.signal.throwIfAborted()
       return Promise.resolve(pluginStatus())
     },
-    presentCall: () => ({
-      card: 'generic',
-      title: 'Plugin status',
-      kind: 'other',
-      rawInput: '{}',
-    }),
   }))
 }
