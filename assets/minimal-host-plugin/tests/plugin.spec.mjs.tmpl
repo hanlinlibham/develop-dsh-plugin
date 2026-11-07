@@ -1,0 +1,11 @@
+import assert from 'node:assert/strict'
+import test from 'node:test'
+import { pluginStatus } from '../lib/index.js'
+
+test('plugin status identifies the generated package', () => {
+  assert.deepEqual(pluginStatus(), {
+    packageName: '__PACKAGE_NAME__',
+    pluginId: '__PLUGIN_ID__',
+    active: true,
+  })
+})

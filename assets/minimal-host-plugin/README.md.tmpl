@@ -1,0 +1,53 @@
+# __PACKAGE_NAME__
+
+A generated Host-only DSH plugin that registers the `__TOOL_NAME__` model tool.
+
+Replace the status behavior with one current capability after completing the research and design gates. Keep the package single-purpose and preserve the tool, replay, and unload contracts.
+
+## Contract
+
+- Runtime: Host only
+- Consumes: `tools`
+- Provides: `__TOOL_NAME__`
+- Model-visible data: the tool schema and rendered status result
+- Durable source: normal session tool call and result events
+- Cleanup: `ctx.tools.register()` is owned by the plugin fiber
+- Compatible DSH version: `__DSH_VERSION__`
+
+## Development
+
+```bash
+__PM_INSTALL__
+__PM_CHECK__
+__PM_PACK__
+```
+
+Run the target repository's inject, dependency, lint, and aggregate test gates as well.
+
+## Isolated installation
+
+```bash
+dsh plugin --profile demo add .
+dsh --profile demo --dump-config
+```
+
+Start a real session in that profile and confirm the model can see and call `__TOOL_NAME__`.
+
+## Removal
+
+```bash
+dsh plugin --profile demo remove __PACKAGE_NAME__
+dsh --profile demo --dump-config
+```
+
+The second config must not contain the `__PLUGIN_ID__` row, and the base conversation must still start.
+
+## Model Experience
+
+The generated example adds one tool schema and a short bounded text result. Recalculate the token and KV-cache impact after changing the schema or rendering.
+
+## Known limitations
+
+- This is a Host-only starting point, not a Client UI template.
+- The generated status tool is an executable example, not a product requirement.
+- Static package checks do not replace Loader boot, real-session, replay, or unload evidence.

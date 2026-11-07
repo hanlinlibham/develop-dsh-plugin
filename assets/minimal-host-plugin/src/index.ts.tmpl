@@ -1,0 +1,52 @@
+import type { Context } from '@deepseek-ai/cordis'
+import { defineTool } from '@deepseek-ai/dsh-tools'
+
+export const name = '__PLUGIN_ID__'
+export const inject = ['tools']
+
+export interface PluginStatus {
+  packageName: string
+  pluginId: string
+  active: boolean
+}
+
+export function pluginStatus(): PluginStatus {
+  return {
+    packageName: '__PACKAGE_NAME__',
+    pluginId: '__PLUGIN_ID__',
+    active: true,
+  }
+}
+
+export function apply(ctx: Context): void {
+  ctx.tools.register(defineTool({
+    name: '__TOOL_NAME__',
+    description: 'Report whether the __PLUGIN_ID__ example plugin is active.',
+    parameters: {},
+    output: {
+      schema: {
+        type: 'object',
+        additionalProperties: false,
+        properties: {
+          packageName: { type: 'string', required: true },
+          pluginId: { type: 'string', required: true },
+          active: { type: 'boolean', required: true },
+        },
+      },
+      render: (_args, value) => [{
+        type: 'text',
+        text: `${value.pluginId} is ${value.active ? 'active' : 'inactive'}.`,
+      }],
+    },
+    execute(_args, exec) {
+      exec.signal.throwIfAborted()
+      return Promise.resolve(pluginStatus())
+    },
+    presentCall: () => ({
+      card: 'generic',
+      title: 'Plugin status',
+      kind: 'other',
+      rawInput: '{}',
+    }),
+  }))
+}

@@ -1,0 +1,39 @@
+{
+  "name": "__PACKAGE_NAME__",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "files": [
+    "lib/*.js",
+    "lib/*.js.map",
+    "cordis.patch.yml",
+    "README.md"
+  ],
+  "exports": {
+    ".": "./lib/index.js",
+    "./package.json": "./package.json"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "scripts": {
+    "build": "tsdown",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "tsdown && node --test tests/*.spec.mjs",
+    "check": "tsc --noEmit -p tsconfig.json && tsdown && node --test tests/*.spec.mjs"
+  },
+  "peerDependencies": {
+    "@deepseek-ai/cordis": "*"
+  },
+  "dependencies": {
+    "@deepseek-ai/dsh-tools": "__DSH_VERSION__"
+  },
+  "devDependencies": {
+    "@deepseek-ai/cordis": "__CORDIS_VERSION__",
+    "@types/node": "^22.20.1",
+    "tsdown": "^0.15.6",
+    "typescript": "^5.9.2"
+  }
+}

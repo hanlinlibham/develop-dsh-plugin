@@ -1,0 +1,4 @@
+interface:
+  display_name: "开发 DSH 插件"
+  short_description: "从调研、定缝到真实组合验收，开发可独立卸载的 DSH 插件"
+  default_prompt: "使用 $develop-dsh-plugin 从调研开始开发并验证一个 DeepSeek Harness 插件。"
